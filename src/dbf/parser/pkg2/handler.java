@@ -16,6 +16,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +30,7 @@ import net.iryndin.jdbf.reader.DbfReader;
  * @author ziron_000
  */
 public class handler {
-
+    private List<Integer> stoplist = new ArrayList<Integer>();
     public void toJson() {
         Charset stringCharset = Charset.forName("cp1252");
 
@@ -48,16 +49,21 @@ public class handler {
                 String json = "";
                 writer.print("[");
                 int count = 0;
-              
+                stoplist.addAll(Arrays.asList(1409, 2092, 2093, 2532, 5155, 5857, 5872, 6368, 6782, 7844, 8080, 8241, 8594, 8595, 8601, 9359));
+                System.out.println(stoplist);
                 while ((rec = reader.read()) != null) {
-                    //System.out.println("memo header: "+rec.getMemoHeader());
+                   // System.out.println(Integer.parseInt(rec.getString("CUS_ID")));
+                    if(!stoplist.contains(Integer.parseInt(rec.getString("CUS_ID")))){
+                        continue;
+                    }
                     json = "";
                     if(count > 0) json += "},";
                     count++;
                     json += "{";
                     for(Iterator<DbfField> i = fields.iterator(); i.hasNext(); ) {
                         DbfField field = i.next();
-                        System.out.println(rec.getString(field.getName()).matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+"));
+                        
+                        //System.out.println(rec.getString(field.getName()).matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+"));
                         if(field.getType().toString() == "Memo" && rec.getString(field.getName()) != null  && rec.getString(field.getName()).matches("((-|\\+)?[0-9]+(\\.[0-9]+)?)+")){
                             json += addFieldValJson(field.getName(), rec.getMemoAsString(field.getName()).replaceAll("\n", ", ").replaceAll("\r", ", "));
                             if(i.hasNext()) json += ",";
@@ -66,7 +72,7 @@ public class handler {
                             //System.out.println(rec.getMemoAsString(field.getName()));
                         }else if(field.getType().toString() == "Date"){
                             //try{
-                                json += addFieldValJson(field.getName(), rec.getString(field.getName()));
+                                json += addFieldValJson(field.getName(), cleanData(rec.getString(field.getName())));
                                 if(i.hasNext()) json += ",";
                                 //System.out.println(rec.getDate(field.getName()));
                             //}catch(ParseException e){
@@ -74,7 +80,8 @@ public class handler {
                            // }
                             
                         }else{
-                            json += addFieldValJson(field.getName(), rec.getString(field.getName()));
+                            //System.out.println(rec.getString(field.getName()));
+                            json += addFieldValJson(field.getName(), cleanData(rec.getString(field.getName()).toString()));
                             if(i.hasNext()) json += ",";
                             //System.out.println(field.getName() +": "+rec.getString(field.getName()));
                             //System.getProperties();
@@ -91,12 +98,11 @@ public class handler {
            
                   
                 }
-                System.out.print(json);
+                
                 writer.print("}]");
                 
                     
                 writer.close();
-                
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -221,7 +227,7 @@ public class handler {
                             //System.out.println(rec.getMemoAsString(field.getName()));
                         }else if(field.getType().toString() == "Date"){
                             //try{
-                                json += addFieldValJson(field.getName(), rec.getString(field.getName()));
+                                json += addFieldValJson(field.getName(), cleanData(rec.getString(field.getName())));
                                 if(i.hasNext()) json += ",";
                                 //System.out.println(rec.getDate(field.getName()));
                             //}catch(ParseException e){
@@ -229,7 +235,7 @@ public class handler {
                            // }
                             
                         }else{
-                            json += addFieldValJson(field.getName(), rec.getString(field.getName()));
+                            json += addFieldValJson(field.getName(), cleanData(rec.getString(field.getName()).toString()));
                             if(i.hasNext()) json += ",";
                             //System.out.println(field.getName() +": "+rec.getString(field.getName()));
                             //System.getProperties();
@@ -337,4 +343,12 @@ public class handler {
 		System.out.println(response.toString());
 
 	}
+    
+    
+    private String cleanData(String str) {
+        System.out.println(str);
+        str = str.replaceAll("\\\\", "\\\\\\\\");
+        return str;
+    }
+    
 }
