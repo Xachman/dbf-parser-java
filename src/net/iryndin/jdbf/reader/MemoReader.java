@@ -3,7 +3,6 @@ package net.iryndin.jdbf.reader;
 import net.iryndin.jdbf.core.MemoFileHeader;
 import net.iryndin.jdbf.core.MemoRecord;
 import net.iryndin.jdbf.util.BitUtils;
-import net.iryndin.jdbf.util.IOUtils;
 import net.iryndin.jdbf.util.JdbfUtils;
 
 import java.io.*;
@@ -21,22 +20,25 @@ import java.io.*;
  */
 public class MemoReader implements Closeable {
 
-    private static final int BUFFER_SIZE = 335544320;
+    private static final int BUFFER_SIZE = 8192;
     private InputStream memoInputStream;
     private MemoFileHeader memoHeader;
+    private InputStream oldStream;
 
     public MemoReader(File memoFile) throws IOException {
+        
         this(new FileInputStream(memoFile));
     }
 
     public MemoReader(InputStream inputStream) throws IOException {
         this.memoInputStream = new BufferedInputStream(inputStream, BUFFER_SIZE);
+        this.oldStream = inputStream;
         readMetadata();
     }
 
     private void readMetadata() throws IOException {
         byte[] headerBytes = new byte[JdbfUtils.MEMO_HEADER_LENGTH];
-        memoInputStream.mark(BUFFER_SIZE);
+        memoInputStream.mark(8192);
         memoInputStream.read(headerBytes);
         this.memoHeader = MemoFileHeader.create(headerBytes);
     }
@@ -53,17 +55,19 @@ public class MemoReader implements Closeable {
     }
 
     public MemoRecord read(int offsetInBlocks) throws IOException {
-        memoInputStream.reset();
+        InputStream memo = new FileInputStream("C:\\Users\\ziron_000\\Desktop\\solw\\data\\invoice.FPT");
+        memoInputStream = new BufferedInputStream(memo, BUFFER_SIZE);
+        //System.out.println(this.memoHeader);
+       // memoInputStream.mark(memoHeader.getBlockSize()*offsetInBlocks);
         memoInputStream.skip(memoHeader.getBlockSize()*offsetInBlocks);
         byte[] recordHeader = new byte[8];
         memoInputStream.read(recordHeader);
         int memoRecordLength = BitUtils.makeInt(recordHeader[7], recordHeader[6], recordHeader[5], recordHeader[4]);
-        //System.out.println("memolen: "+memoRecordLength);
         if(memoRecordLength < 0) {
             memoRecordLength = 0;
         }
         byte[] recordBody = new byte[memoRecordLength];
-       memoInputStream.read(recordBody);
+        memoInputStream.read(recordBody);
 
         return new MemoRecord(recordHeader, recordBody, memoHeader.getBlockSize(), offsetInBlocks);
     }

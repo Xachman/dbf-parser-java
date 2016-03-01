@@ -29,7 +29,7 @@ public class DbfParser2 {
 //        }catch(IOException e) {
 //            e.printStackTrace();
 //        }
-            handle.toJson();
+            handle.toCsv();
         
         
     }

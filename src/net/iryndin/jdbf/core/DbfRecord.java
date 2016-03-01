@@ -161,10 +161,6 @@ public class DbfRecord {
         if (offsetInBlocks == 0) return "";
         return memoReader.read(offsetInBlocks).getValueAsString(charset);
     }
-    public String getMemoHeader() throws IOException {
-        
-        return memoReader.getMemoHeader().toString();
-    }
 
     public String getMemoAsString(String fieldName) throws IOException {
         Charset charset = getStringCharset();
